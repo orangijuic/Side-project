@@ -1,0 +1,141 @@
+---
+title: "Untitled"
+author: "Yujia Yao"
+date: '2022-06-14'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# enter csv path 
+# data = read.csv('path/data_preprocess.csv')
+```
+
+```{r}
+idx = which(data$income == "<=50K")
+data$income[idx] = 0
+idx2 = which(data$income == ">50K")
+data$income[idx2] = 1
+data$income = as.factor(data$income)
+```
+
+# check the significance of all the numerical variables
+```{r}
+# fnlwgt
+# null hypothesis: beta_fnlwgt = 0
+# HA: beta_fnlwgt is not 0
+l_fnlwgt = glm(income ~ fnlwgt, data,  family = 'binomial')
+summary(l_fnlwgt)
+# p value > 0.05
+# do not reject the null hypothesis
+# effect of fnlwgt is not significant in terms of predicting income
+# this column can be remove from the dataset
+```
+
+```{r}
+# remove fnlwgt
+data = data[,-4]
+```
+
+```{r}
+# age
+# null hypothesis: beta_age = 0
+# HA: beta_age is not 0
+l_age = glm(income ~ age, data,  family = 'binomial')
+summary(l_age)
+# p value < 0.05
+# reject the null hypothesis
+# effect of age is significant in terms of predicting income
+# this column can not be remove from the dataset
+```
+
+```{r}
+# education_num
+# null hypothesis: beta_education_num = 0
+# HA: beta_education_num is not 0
+l_education_num = glm(income ~ education_num, data,  family = 'binomial')
+summary(l_education_num)
+# p value < 0.05
+# reject the null hypothesis
+# effect of education_num is significant in terms of predicting income
+# this column can not be remove from the dataset
+```
+
+```{r}
+# capital_gain
+# null hypothesis: beta_capital_gain = 0
+# HA: beta_capital_gain is not 0
+l_capital_gain = glm(income ~ capital_gain, data,  family = 'binomial')
+summary(l_capital_gain)
+# p value < 0.05
+# reject the null hypothesis
+# effect of capital_gain is significant in terms of predicting income
+# this column can not be remove from the dataset
+```
+
+```{r}
+# capital_loss
+# null hypothesis: beta_capital_loss = 0
+# HA: beta_capital_loss is not 0
+l_capital_loss = glm(income ~ capital_loss, data,  family = 'binomial')
+summary(l_capital_loss)
+# p value < 0.05
+# reject the null hypothesis
+# effect of capital_loss is significant in terms of predicting income
+# this column can not be remove from the dataset
+```
+
+```{r}
+# can capital gain and capital loss be replaced by one column "capital"?
+# capital
+data$capital = data$capital_gain - data$capital_loss
+
+l_capital = glm(income ~ capital, data,  family = 'binomial')
+l_capital2 = glm(income ~ capital_gain + capital_loss, data,  family = 'binomial')
+
+anova(l_capital,l_capital2, test="Chi")
+
+# p value is smaller than 0.05
+# therefor do not use capital to replace capital_gain and capital_loss
+data = data[,-16]
+```
+
+```{r}
+# hours_per_week
+# null hypothesis: beta_hours_per_week = 0
+# HA: beta_hours_per_week is not 0
+l_hours_per_week = glm(income ~ hours_per_week, data,  family = 'binomial')
+summary(l_hours_per_week)
+# p value < 0.05
+# reject the null hypothesis
+# effect of hours_per_week is significant in terms of predicting income
+# this column can not be remove from the dataset
+```
+
+```{r}
+fit_forw_aic = step(l_full, direction = "forward", trace=0)
+summary(fit_forw_aic)
+# education does not appear in the AIC model
+# in fact, it is highly correlated with education_num
+# therefore education can be remove from the dataset
+data = data[,-4]
+```
+
+```{r}
+# output the csv file back to python for further analysis
+head(data)
+data = data[,-1]
+data = data[,-14]
+data = cbind(data[,13],data)
+colnames(data)[1] = "income"
+data = data[-14]
+
+write.csv(data,"/Users/yyj/Desktop/R_processed_data.csv", row.names = FALSE)
+```
+
+
+
+
